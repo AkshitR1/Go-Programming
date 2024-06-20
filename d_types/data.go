@@ -25,5 +25,6 @@ func main() {
 	// integer
 	age = 25
 	id = 1
-	fmt.Printf("ID is %d , Age is %d \n ", id, age)
+	const B = 5
+	fmt.Printf("ID is %d , Age is %d , B is:%d\n", id, age, B)
 }
