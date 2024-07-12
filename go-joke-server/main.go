@@ -101,7 +101,7 @@ func RandomJokeHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/joke", RandomJokeHandler)
-	fmt.Println("Joke server is running on http://localhost:8080")
+	fmt.Println("Joke server is running on http://localhost:8080/joke")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
