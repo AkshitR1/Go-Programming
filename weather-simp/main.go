@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-const apiKey = "a71f4808652231a0e3d18d87eb55f36c"
+const apiKey = "api-key"
 
 type WeatherResponse struct {
 	Name string `json:"name"`
