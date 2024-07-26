@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -10,13 +11,12 @@ import (
 
 // Joke represents a joke structure
 type Joke struct {
-	Setup     string
-	Punchline string
+	Setup     string `json:"setup"`
+	Punchline string `json:"punchline"`
 }
 
 // Jokes is a slice of Joke
 var Jokes = []Joke{
-
 	{Setup: "Why don't scientists trust atoms?", Punchline: "Because they make up everything!"},
 	{Setup: "What do you get if you cross a cat with a dark horse?", Punchline: "Kitty Perry"},
 	{Setup: "Why was the math book sad?", Punchline: "Because it had too many problems."},
@@ -31,10 +31,6 @@ var Jokes = []Joke{
 
 // RandomJokeHandler handles the requests and responds with a random joke in HTML
 func RandomJokeHandler(w http.ResponseWriter, r *http.Request) {
-	rand.Seed(time.Now().UnixNano())
-	randomIndex := rand.Intn(len(Jokes))
-	randomJoke := Jokes[randomIndex]
-
 	html := `
 		<!DOCTYPE html>
 		<html lang="en">
@@ -84,26 +80,39 @@ func RandomJokeHandler(w http.ResponseWriter, r *http.Request) {
 		<body>
 			<div class="container">
 				<h1>Random Joke</h1>
-				<p>%s</p>
-				<p><strong>%s</strong></p>
+				<p id="setup"></p>
+				<p><strong id="punchline"></strong></p>
 				<button class="button" onclick="getJoke()">Get Another Joke</button>
 			</div>
 			<script>
-				function getJoke() {
-					window.location.reload();
+				async function getJoke() {
+					const response = await fetch('/api/joke');
+					const joke = await response.json();
+					document.getElementById('setup').innerText = joke.setup;
+					document.getElementById('punchline').innerText = joke.punchline;
 				}
+				// Load the first joke on page load
+				getJoke();
 			</script>
 		</body>
 		</html>
 	`
-	fmt.Fprintf(w, html, randomJoke.Setup, randomJoke.Punchline)
+	fmt.Fprintf(w, html)
+}
+
+// ApiJokeHandler handles the requests and responds with a random joke in JSON format
+func ApiJokeHandler(w http.ResponseWriter, r *http.Request) {
+	rand.Seed(time.Now().UnixNano())
+	randomIndex := rand.Intn(len(Jokes))
+	randomJoke := Jokes[randomIndex]
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(randomJoke)
 }
 
 func main() {
 	http.HandleFunc("/joke", RandomJokeHandler)
+	http.HandleFunc("/api/joke", ApiJokeHandler)
 	fmt.Println("Joke server is running on http://localhost:8080/joke")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
-// to run this do go run main.go
-// then open http://localhost:8080/joke.

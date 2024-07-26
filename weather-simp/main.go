@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-const apiKey = "api-key"
+const apiKey = "e28bd1b534d3174e92afa77cada6e08a"
 
 type WeatherResponse struct {
 	Name string `json:"name"`
@@ -32,6 +32,10 @@ func getWeather(city string) (WeatherResponse, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return WeatherResponse{}, fmt.Errorf("failed to get weather: %s", resp.Status)
+	}
+
 	var weatherResponse WeatherResponse
 	if err := json.NewDecoder(resp.Body).Decode(&weatherResponse); err != nil {
 		return WeatherResponse{}, err
@@ -51,6 +55,7 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 		weather, err := getWeather(city)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to get weather: %v", err), http.StatusInternalServerError)
+			log.Printf("Error fetching weather for city %s: %v", city, err)
 			return
 		}
 
@@ -99,18 +104,18 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
     </div>
 </body>
 </html>
-
 		`))
 
 		if err := tmpl.Execute(w, weather); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to execute template: %v", err), http.StatusInternalServerError)
+			log.Printf("Error executing template for city %s: %v", city, err)
 			return
 		}
 	} else if r.Method == http.MethodGet {
 		// Display the form to enter the city
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprintln(w, `
-			<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -142,23 +147,22 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="card-title text-center mb-4">Weather Search</h2>
-                <form method="post" action="/weather">
-                    <div class="form-group">
-                        <label for="city">Enter City:</label>
-                        <input type="text" class="form-control" id="city" name="city" required>
+        <div class="container mt-5">
+        <h1 class="mt-5 text-center">Weather App</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form method="post" class="mt-3">
+                    <div class="input-group mb-3">
+                        <input type="text" id="city" name="city" class="form-control" placeholder="Enter city name" required>
+                        <div class="input-group-append">
+                            <button style="background-color: #FFA500;" class="btn btn-primary" type="submit">Get Weather</button>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-block">Get Weather</button>
                 </form>
-            </div>
         </div>
     </div>
 </body>
 </html>
-
 		`)
 	} else {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
